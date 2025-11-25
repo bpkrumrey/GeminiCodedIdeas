@@ -1,0 +1,7 @@
+{
+  "name": "Presenter Timer and Teleprompter",
+  "description": "A professional countdown timer for presenters with visual warnings and wake-lock functionality to prevent screen sleep. It also includes a teleprompter that listens and scrolls the text accordingly.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
