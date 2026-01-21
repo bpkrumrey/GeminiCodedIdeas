@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useState, useCallback } from 'react';
 
 export const useWakeLock = () => {
@@ -13,8 +14,13 @@ export const useWakeLock = () => {
         });
         setIsLocked(true);
         console.log('Wake Lock is active');
-      } catch (err) {
-        console.error(`${err instanceof Error ? err.name : 'Error'}, ${err instanceof Error ? err.message : 'Unknown error'}`);
+      } catch (err: any) {
+        if (err.name === 'NotAllowedError') {
+          console.warn('Wake Lock disallowed by permissions policy or environment restriction.');
+        } else {
+          console.error(`Wake Lock Error: ${err.name}, ${err.message}`);
+        }
+        setIsLocked(false);
       }
     } else {
       console.warn('Wake Lock API not supported in this browser.');
@@ -24,22 +30,26 @@ export const useWakeLock = () => {
   const releaseWakeLock = useCallback(async () => {
     if (wakeLockRef.current) {
       try {
-        await wakeLockRef.current.release();
+        if (wakeLockRef.current.released === false) {
+          await wakeLockRef.current.release();
+        }
         wakeLockRef.current = null;
         setIsLocked(false);
         console.log('Wake Lock released');
       } catch (err) {
-        console.error(`${err instanceof Error ? err.name : 'Error'}, ${err instanceof Error ? err.message : 'Unknown error'}`);
+        console.error('Error releasing Wake Lock:', err);
       }
     }
   }, []);
 
-  // Re-acquire lock if visibility changes (e.g. user switches tabs and comes back)
+  // Re-acquire lock if visibility changes
   useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && !wakeLockRef.current) {
-        // Optionally auto-request here if intended, but usually requires user gesture interaction first.
-        // We will leave manual control to the start button to adhere to browser policies.
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState === 'visible' && isLocked && !wakeLockRef.current) {
+        // We attempt to re-request if it was locked before visibility was lost
+        // Browser policies usually require a user gesture, but visibility change re-acquisition 
+        // is sometimes permitted depending on the browser.
+        requestWakeLock();
       }
     };
 
@@ -48,7 +58,7 @@ export const useWakeLock = () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       releaseWakeLock();
     };
-  }, [releaseWakeLock]);
+  }, [isLocked, requestWakeLock, releaseWakeLock]);
 
   return { isLocked, requestWakeLock, releaseWakeLock };
 };

@@ -1,11 +1,17 @@
+
 import React from 'react';
 
 interface TimerDisplayProps {
   secondsRemaining: number;
+  reminderSeconds?: number; // The user-defined threshold for the amber warning
   variant?: 'fullscreen' | 'mini';
 }
 
-export const TimerDisplay: React.FC<TimerDisplayProps> = ({ secondsRemaining, variant = 'fullscreen' }) => {
+export const TimerDisplay: React.FC<TimerDisplayProps> = ({ 
+  secondsRemaining, 
+  reminderSeconds = 300, 
+  variant = 'fullscreen' 
+}) => {
   const isOvertime = secondsRemaining < 0;
   const absSeconds = Math.abs(secondsRemaining);
   
@@ -21,21 +27,19 @@ export const TimerDisplay: React.FC<TimerDisplayProps> = ({ secondsRemaining, va
   if (isOvertime) {
     // Red when over time
     colorClass = "text-red-600 dark:text-red-500";
-  } else if (secondsRemaining <= 300 && secondsRemaining > 0) {
-    // Flashing amber when <= 5 mins
+  } else if (secondsRemaining <= reminderSeconds && secondsRemaining > 0) {
+    // Flashing amber when under user threshold
     colorClass = "text-amber-500";
     animationClass = "animate-flash";
   }
 
   if (variant === 'mini') {
-    // Mini mode is always on a dark background (teleprompter), so we force light colors
-    // Overriding the default colorClass logic slightly for high contrast
     let miniColorClass = "text-white"; 
     
     if (isOvertime) {
       miniColorClass = "text-red-500";
-    } else if (secondsRemaining <= 300 && secondsRemaining > 0) {
-      miniColorClass = "text-amber-400"; // Lighter amber for black bg
+    } else if (secondsRemaining <= reminderSeconds && secondsRemaining > 0) {
+      miniColorClass = "text-amber-400"; 
     }
 
     return (
@@ -65,7 +69,7 @@ export const TimerDisplay: React.FC<TimerDisplayProps> = ({ secondsRemaining, va
           Overtime
         </span>
       )}
-      {!isOvertime && secondsRemaining <= 300 && (
+      {!isOvertime && secondsRemaining <= reminderSeconds && (
         <span className="text-xl md:text-3xl font-semibold text-amber-500 uppercase tracking-widest mt-4">
           Warning
         </span>
